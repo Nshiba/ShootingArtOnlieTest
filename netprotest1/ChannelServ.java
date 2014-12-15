@@ -1,5 +1,6 @@
-package scketChanelTest;
+package netprotest1;
 
+import scketChanelTest.*;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
