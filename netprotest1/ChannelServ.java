@@ -1,6 +1,5 @@
 package netprotest1;
 
-import scketChanelTest.*;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -18,12 +17,14 @@ public class ChannelServ {
     private Selector selector;
 
     public static void main(String[] args){
-        new ChannelServ().run();
+//        new ChannelServ().run();
     }
 
     public void run() {
         ServerSocketChannel serverSocketChannel = null;
         try {
+            //セレクタの初期化、ノンブロッキングモード指定、ポートのバインド`
+            //新規接続のチャネルなのでOP_ACCEPT
             selector = Selector.open();
             serverSocketChannel = ServerSocketChannel.open();
             serverSocketChannel.configureBlocking(false);
@@ -32,11 +33,13 @@ public class ChannelServ {
 
             System.out.println("NonBlockingModeで起動しました。port=" + serverSocketChannel.socket().getLocalPort());
 
+            //利用可能なチャネルがどの操作が可能なチャネルであるか判定し処理を分岐
             while (selector.select() > 0) {                
                 for (Iterator iterator = selector.selectedKeys().iterator(); iterator.hasNext();) {
                     SelectionKey key = (SelectionKey) iterator.next();
                     iterator.remove();
-
+                    
+                    //新規接続受付処理が可能の場合
                     if (key.isAcceptable()) {
                         doAccept((ServerSocketChannel) key.channel());
                     }else if(key.isReadable()){
@@ -52,6 +55,7 @@ public class ChannelServ {
                     System.out.println("NonblockingModeを終了し停止します。");
                     serverSocketChannel.close();
                 } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
         }
@@ -59,11 +63,14 @@ public class ChannelServ {
 
     private void doAccept(ServerSocketChannel serverSocketChannel){
         try {
+            //接続の待受
             SocketChannel channel = serverSocketChannel.accept();
-            String remoteAddress = channel.socket().getRemoteSocketAddress().toString();
 
+            String remoteAddress = channel.socket().getRemoteSocketAddress().toString();
             System.out.println(remoteAddress + " : [接続されました]");
 
+            //ノンブロッキングモード
+            //channelに登録
             channel.configureBlocking(false);
             channel.register(selector, SelectionKey.OP_READ);
 
@@ -73,8 +80,10 @@ public class ChannelServ {
     }
 
     private void doRead(SocketChannel channel){
+        //バッファを初期化、エンコード指定
         ByteBuffer buf = ByteBuffer.allocate(BUF_SIZE);
         Charset charset = Charset.forName("UTF-8");
+
         String remoteAddress = channel.socket().getRemoteSocketAddress().toString();
 
         try {
@@ -82,19 +91,26 @@ public class ChannelServ {
                 return;
             }
             buf.flip();
-            System.out.println(remoteAddress + " : " + charset.decode(buf).toString());
-            buf.flip();
-            channel.write(charset.encode(CharBuffer.wrap(charset.decode(buf).toString() + "送り返します")));
-            channel.write(buf);
+
+            String bufContent = charset.decode(buf).toString();
+            System.out.println(remoteAddress + " : " + bufContent);
+
+            //channelに文字列を書き込み
+            doSent(channel, "送り返します : " + bufContent);
+
         } catch (Exception e) {
             e.printStackTrace();
-        }finally {
-            System.out.println(remoteAddress + " : [切断しました]");
-            try {
-                channel.close();
-            } catch (Exception e) {
+        }
+    }
+
+    private void doSent(SocketChannel channel, String content){
+        ByteBuffer buf = ByteBuffer.allocate(BUF_SIZE);
+        Charset charset = Charset.forName("UTF-8");
+
+        try {
+            channel.write(charset.encode(CharBuffer.wrap(content)));
+        } catch (Exception e) {
                 e.printStackTrace();
-            }
         }
     }
 }
