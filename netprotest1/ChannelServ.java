@@ -8,6 +8,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 public class ChannelServ {
@@ -15,6 +16,8 @@ public class ChannelServ {
     public static final int BUF_SIZE = 1000;
 
     private Selector selector;
+
+    private ArrayList<PlayerBean> players;
 
     public static void main(String[] args){
 //        new ChannelServ().run();

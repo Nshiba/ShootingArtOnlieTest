@@ -7,6 +7,7 @@ public class PlayerBean implements Serializable{
     private int bulletType;
     private boolean bulletBool;
     private float hp;
+    private int playerNumber;
 
     /**
      * @return the x
@@ -76,5 +77,19 @@ public class PlayerBean implements Serializable{
      */
     public void setHp(float hp) {
         this.hp = hp;
+    }
+
+    /**
+     * @return the playerNumber
+     */
+    public int getPlayerNumber() {
+        return playerNumber;
+    }
+
+    /**
+     * @param playerNumber the playerNumber to set
+     */
+    public void setPlayerNumber(int playerNumber) {
+        this.playerNumber = playerNumber;
     }
 }

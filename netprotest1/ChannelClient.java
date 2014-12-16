@@ -8,8 +8,11 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ChannelClient {
+
     public static final int PORT = 5000;
     public static final int BUF_SIZE = 5000;
     private static Charset charset = Charset.forName("UTF-8");
@@ -26,6 +29,7 @@ public class ChannelClient {
 
         bean.setY(0);
         bean.setBulletBool(false);
+        
         ///////////////////////////////////////
 
         SocketChannel channel = null;
@@ -43,24 +47,30 @@ public class ChannelClient {
                 //channelに文字列を書き込み
                 doSent(channel, line + "\n");
 
-                while (channel.isConnected()){
-                    buf.clear();
-                    if (channel.read(buf) < 0){
-                        return;
-                    }
-                    buf.flip();
-                    doRead(channel, buf);
+                if(!channel.isConnected()){
+                    continue;
                 }
+                buf.clear();
+                if (channel.read(buf) < 0){
+                    return;
+                }
+                buf.flip();
+                doRead(channel, buf);
 
-                channel.close();
             }
 
-
         } catch (IOException e) {
-            e.printStackTrace();
+            try {
+                System.out.println("エラーが発生しました");
+                channel.close();
+                e.printStackTrace();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
         } finally {
             if (channel != null && channel.isOpen()){
                 try {
+                    System.out.println("testets");
                     channel.close();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -76,35 +86,29 @@ public class ChannelClient {
             String bufContent = charset.decode(buf).toString();
             System.out.println(remoteAddress + " : " + bufContent);
 
-                    channel.close();
         } catch (Exception e) {
-            e.printStackTrace();
-//        } finally {
-//            if (channel != null && channel.isOpen()){
-//                try {
-//                    channel.close();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
+            try {
+                System.out.println("エラーが発生しました");
+                channel.close();
+                e.printStackTrace();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
         }
     }
 
     private void doSent(SocketChannel channel, String content){
-        ByteBuffer buf = ByteBuffer.allocate(BUF_SIZE);
 
         try {
             channel.write(charset.encode(CharBuffer.wrap(content)));
         } catch (Exception e) {
+            try {
+                System.out.println("エラーが発生しました");
+                channel.close();
                 e.printStackTrace();
-//        } finally {
-//            if (channel != null && channel.isOpen()){
-//                try {
-//                    channel.close();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
         }
     }
 }
