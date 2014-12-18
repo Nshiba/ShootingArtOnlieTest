@@ -8,29 +8,30 @@ package netprotest1;
 import java.io.ByteArrayOutputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import sun.misc.HexDumpEncoder;
 
+import static netprotest1.StaticData.*;
+
 /**
  *
  * @author naoya
  */
 public class ChannelMapServ extends Thread {
-    private static int PORT = 5000;
-    private static int BUF_SIZE = 1024;
 
     private LinkedList<SocketChannel> channelList = new LinkedList<>();
-
     private Map<SocketChannel, ByteArrayOutputStream> bufferMap = new HashMap<>();
-    
     private Selector selector = null;
+    private Map<SocketChannel, PlayerBean> playerMap = new HashMap<>();
 
     public static void main(String[] args){
         new ChannelMapServ().start();
@@ -78,6 +79,7 @@ public class ChannelMapServ extends Thread {
     }
 
     private void doAccept(ServerSocketChannel acceptServerChannel){
+                System.out.println(playerMap.size());
         try {
             SocketChannel channel = acceptServerChannel.accept();
             System.out.println("Accesptに入りました" + channel);
@@ -86,6 +88,10 @@ public class ChannelMapServ extends Thread {
             channel .register(selector, SelectionKey.OP_READ);
 
             channelList.add(channel);
+
+            PlayerBean player = new PlayerBean();
+            player.setPlayerNumber(channelList.size() + 1);
+            playerMap.put(channel, player);
 
             String remoteAddr = channel.socket().getRemoteSocketAddress().toString();
             System.out.println("接続されました : " + remoteAddr);
@@ -100,14 +106,20 @@ public class ChannelMapServ extends Thread {
             String remoteAddr = channel.socket().getRemoteSocketAddress().toString();
 
             ByteBuffer buf = ByteBuffer.allocate(BUF_SIZE);
+            Charset charset = Charset.forName("UTF-8");
 
             if (channel.read(buf) > 0) {
                 buf.flip();
 
+                PlayerBean player = playerMap.get(channel);
+
+
+                String bufContent = charset.decode(buf).toString();
+                System.out.println("受信しました" + remoteAddr + " : " + bufContent + " playerNumber " + player.getPlayerNumber());
+                buf = charset.encode(CharBuffer.wrap(bufContent));
+
                 byte[] bytes = new byte[buf.limit()];
                 buf.get(bytes);
-
-                System.out.println("受信しました : " + remoteAddr);
 
                 //ログをダンプ
                 HexDumpEncoder hex = new HexDumpEncoder();
@@ -127,6 +139,10 @@ public class ChannelMapServ extends Thread {
 
                     //宛先が書込可能になるのを監視する
                     client.register(selector, SelectionKey.OP_WRITE);
+                }
+
+                if (bufContent.equals("logout")) {
+                    logout(channel);
                 }
             }
         } catch (Exception e) {
@@ -176,6 +192,7 @@ public class ChannelMapServ extends Thread {
         try {
                 channel.finishConnect();
                 channel.close();
+                playerMap.remove(channel);
 
                 if (channelList.remove(channel)) {
                     System.out.println("リストから" + channel + "を削除しました");

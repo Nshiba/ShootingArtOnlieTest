@@ -11,9 +11,9 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import static netprotest1.StaticData.*;
+
 public class ChannelServ {
-    public static final int PORT = 5000;
-    public static final int BUF_SIZE = 1000;
 
     private Selector selector;
 

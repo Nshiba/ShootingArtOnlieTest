@@ -1,6 +1,7 @@
 package netprotest1;
 
 import java.io.Serializable;
+import java.nio.channels.SocketChannel;
 
 public class PlayerBean implements Serializable{
     private float x,y;

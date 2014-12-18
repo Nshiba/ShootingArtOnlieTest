@@ -8,13 +8,11 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import static netprotest1.StaticData.*;
 
 public class ChannelClient {
 
-    public static final int PORT = 5000;
-    public static final int BUF_SIZE = 5000;
     private static Charset charset = Charset.forName("UTF-8");
 
     public static void main(String[] args){
@@ -44,6 +42,11 @@ public class ChannelClient {
                 System.out.println("送信する文字列を入力してください : ");
                 String line = keyin.readLine();
 
+                if(line.equals("logout")){
+                    System.out.println("logoutします");
+                    logout(channel);
+                    break;
+                }
                 //channelに文字列を書き込み
                 doSent(channel, line + "\n");
 
@@ -100,7 +103,24 @@ public class ChannelClient {
     private void doSent(SocketChannel channel, String content){
 
         try {
+            System.out.println(content);
             channel.write(charset.encode(CharBuffer.wrap(content)));
+        } catch (Exception e) {
+            try {
+                System.out.println("エラーが発生しました");
+                channel.close();
+                e.printStackTrace();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+
+    private void logout(SocketChannel channel){
+        try {
+            channel.write(charset.encode(CharBuffer.wrap("logout")));
+            channel.close();
+            System.out.println("ログアウトしました。");
         } catch (Exception e) {
             try {
                 System.out.println("エラーが発生しました");
